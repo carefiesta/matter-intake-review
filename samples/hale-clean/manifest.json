@@ -1,0 +1,9 @@
+{
+  "key": "hale-clean",
+  "title": "Hale sidewalk inquiry",
+  "files": [
+    {"name": "01-intake-form.txt", "type": "intake form", "channel": "web form"},
+    {"name": "02-incident-note.txt", "type": "incident description", "channel": "email"},
+    {"name": "03-clinic-note.txt", "type": "medical note", "channel": "upload"}
+  ]
+}

@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block body %}
+<p><a href="/matters">All matters</a></p>
+<h2>{{ matter.title }}</h2>
+<p>
+  <span class="status">{{ matter.status }}</span>
+  <span class="muted">{{ matter.matter_id }} · checklist {{ matter.checklist_version }}</span>
+</p>
+<p>
+  <a href="/matters/{{ matter.matter_id }}/report?audience=staff">Staff draft</a>
+  ·
+  <a href="/matters/{{ matter.matter_id }}/report?audience=attorney">Attorney report</a>
+  ·
+  <a href="/matters/{{ matter.matter_id }}/audit">Audit log</a>
+</p>
+
+{% if user.role == "attorney_reviewer" %}
+<section class="card">
+  <h3>Attorney reviewer</h3>
+  <p>You are outside the pipeline. You can read a released report and acknowledge it or send it back. You cannot write facts.</p>
+  {% if matter.status in released %}
+    <p><a class="button" href="/matters/{{ matter.matter_id }}/report?audience=attorney">Open the released report</a></p>
+    {% if matter.status == "Ready for attorney" %}
+      <form method="post" action="/matters/{{ matter.matter_id }}/acknowledge">
+        <button type="submit">Acknowledge that I have seen the report</button>
+      </form>
+    {% endif %}
+    <form method="post" action="/matters/{{ matter.matter_id }}/return">
+      <label for="return_reason">Send it back</label>
+      <input id="return_reason" name="reason" type="text" required>
+      <p><button class="warn" type="submit">Return for revision</button></p>
+    </form>
+  {% else %}
+    <p>The report is not released yet.</p>
+  {% endif %}
+</section>
+{% else %}
+
+<section class="card">
+  <h3>Quality gate</h3>
+  {% if gate %}
+    {% if gate.passed %}
+      <p>The gate passes for an intake-staff release.</p>
+    {% else %}
+      <p class="error">Ready is blocked.</p>
+      <ul>{% for reason in gate.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+    {% endif %}
+  {% endif %}
+  <form method="post" action="/matters/{{ matter.matter_id }}/gate">
+    <button class="secondary" type="submit">Check the gate</button>
+  </form>
+  {% if user.role == "intake_staff" and matter.status != "Ready for attorney" and matter.status != "Attorney reviewed" %}
+    <form method="post" action="/matters/{{ matter.matter_id }}/ready">
+      <label for="ready_reason">Mark ready for attorney</label>
+      <input id="ready_reason" name="reason" type="text" required placeholder="Why this packet can go to the attorney">
+      <p><button type="submit">Mark ready</button></p>
+    </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h3>Documents</h3>
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>File</th><th>Type</th><th>Channel</th><th>Version</th>
+        <th>Status</th><th>Length</th><th>Received</th><th>Extracted</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for doc in documents %}
+      <tr>
+        <td><a href="/matters/{{ matter.matter_id }}/source/{{ doc.document_id }}">{{ doc.document_id }}</a></td>
+        <td>{{ doc.filename }}{% if not doc.is_current %} (older){% endif %}</td>
+        <td>{{ doc.document_type }}</td>
+        <td>{{ doc.channel }}</td>
+        <td>{{ doc.version }}</td>
+        <td>{{ doc.status }}{% if doc.reason %}<br><span class="muted">{{ doc.reason }}</span>{% endif %}</td>
+        <td>{{ doc.length_bytes }}</td>
+        <td>{{ doc.received_at }}</td>
+        <td>{{ doc.extracted_at or "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if user.role == "intake_staff" %}
+    <form method="post" action="/matters/{{ matter.matter_id }}/add" enctype="multipart/form-data">
+      <div class="row">
+        <div>
+          <label for="extra">Add a later file</label>
+          <input id="extra" name="extra" type="file" required>
+        </div>
+        <div>
+          <label for="extra_type">Type</label>
+          <select id="extra_type" name="document_type">
+            <option value="">Infer from the filename</option>
+            {% for item in document_types %}<option>{{ item }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="extra_channel">Channel</label>
+          <select id="extra_channel" name="channel">
+            {% for item in channels %}<option>{{ item }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <p><button type="submit">Add file</button></p>
+    </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h3>Flags</h3>
+  {% if not flags %}
+    <p>No flags.</p>
+  {% endif %}
+  {% for flag in flags %}
+    {% if flag.active %}
+    <article class="card flag-{{ flag.flag_type|lower|replace(' ', '-') }}">
+      <p><strong>{{ flag.flag_type }}</strong> · {{ flag.fact_type }}
+        {% if flag.blocks_ready and not flag.disposition %} · blocks Ready{% endif %}
+      </p>
+      {% if flag.gap_reason %}<p>{{ flag.gap_reason }}</p>{% endif %}
+      {% if flag.flag_type == "Conflict" %}<p>No winning value is selected.</p>{% endif %}
+      {% if flag.display_fact_id %}<p>Display instance: {{ flag.display_fact_id }}</p>{% endif %}
+      {% if flag.disposition %}
+        <p>Disposition: {{ flag.disposition }} by {{ flag.disposition_actor }} at {{ flag.disposition_at }}</p>
+      {% endif %}
+      {% if flag.members %}
+        <ul>
+          {% for member in flag.members %}
+            <li>{{ member.value }} — {{ member.document_id }} {{ member.locator }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if user.role == "intake_staff" and not flag.disposition %}
+        <form method="post" action="/matters/{{ matter.matter_id }}/dispose">
+          <input type="hidden" name="flag_id" value="{{ flag.flag_id }}">
+          <label for="disp-{{ flag.flag_id }}">Disposition</label>
+          <select id="disp-{{ flag.flag_id }}" name="disposition">
+            {% for item in dispositions %}<option>{{ item }}</option>{% endfor %}
+          </select>
+          <label for="disp-reason-{{ flag.flag_id }}">Reason</label>
+          <input id="disp-reason-{{ flag.flag_id }}" name="reason" type="text" required>
+          <p><button type="submit">Save disposition</button></p>
+        </form>
+      {% endif %}
+    </article>
+    {% endif %}
+  {% endfor %}
+</section>
+
+<section class="card">
+  <h3>Candidates</h3>
+  <p class="muted">These are generated candidates. They are not approved facts until you accept or edit them.</p>
+  {% if user.role == "intake_staff" %}
+  <form method="post" action="/matters/{{ matter.matter_id }}/accept">
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th></th><th>Fact</th><th>Value</th><th>Source</th><th>Label</th></tr>
+      </thead>
+      <tbody>
+        {% for fact in candidates %}
+        <tr>
+          <td><input type="checkbox" name="fact_id" value="{{ fact.fact_id }}" aria-label="Select {{ fact.fact_id }}"></td>
+          <td>{{ fact.fact_id }}<br>{{ labels.get(fact.fact_type, fact.fact_type) }}</td>
+          <td>{{ fact.display_value }}</td>
+          <td>{{ fact.document_id }}<br>{{ fact.locator }}<br><span class="muted">{{ fact.excerpt_display }}</span></td>
+          <td>{{ fact.label }}<br>{{ fact.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% if candidates %}
+      <label for="accept_reason">Reason for the checked facts</label>
+      <input id="accept_reason" name="reason" type="text" required>
+      <p><button type="submit">Accept checked</button></p>
+    {% else %}
+      <p>No candidates waiting.</p>
+    {% endif %}
+  </form>
+  {% for fact in candidates %}
+    <details>
+      <summary>Correct or reject {{ fact.fact_id }} ({{ labels.get(fact.fact_type, fact.fact_type) }})</summary>
+      <form method="post" action="/matters/{{ matter.matter_id }}/edit" class="row">
+        <input type="hidden" name="fact_id" value="{{ fact.fact_id }}">
+        <div>
+          <label for="edit-{{ fact.fact_id }}">New value</label>
+          <input id="edit-{{ fact.fact_id }}" name="new_value" type="text" value="{{ fact.edit_value }}">
+        </div>
+        <div>
+          <label for="edit-reason-{{ fact.fact_id }}">Reason</label>
+          <input id="edit-reason-{{ fact.fact_id }}" name="reason" type="text" required>
+        </div>
+        <button type="submit">Save correction</button>
+      </form>
+      <form method="post" action="/matters/{{ matter.matter_id }}/reject" class="row">
+        <input type="hidden" name="fact_id" value="{{ fact.fact_id }}">
+        <div>
+          <label for="reject-reason-{{ fact.fact_id }}">Reject reason</label>
+          <input id="reject-reason-{{ fact.fact_id }}" name="reason" type="text" required>
+        </div>
+        <button class="warn" type="submit">Reject</button>
+      </form>
+    </details>
+  {% endfor %}
+  {% else %}
+    <ul>
+      {% for fact in candidates %}
+        <li>{{ fact.fact_id }} · {{ labels.get(fact.fact_type, fact.fact_type) }} · {{ fact.display_value }} · {{ fact.label }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h3>Split a candidate</h3>
+  <p class="muted">Both new values have to appear in that candidate's excerpt. The original stays in history.</p>
+  {% if user.role == "intake_staff" %}
+  <form method="post" action="/matters/{{ matter.matter_id }}/split">
+    <label for="split_fact">Fact ID</label>
+    <input id="split_fact" name="fact_id" type="text">
+    <label for="split_a">First value</label>
+    <input id="split_a" name="value_a" type="text">
+    <label for="split_b">Second value</label>
+    <input id="split_b" name="value_b" type="text">
+    <label for="split_reason">Reason</label>
+    <input id="split_reason" name="reason" type="text">
+    <p><button class="secondary" type="submit">Split</button></p>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h3>Approved facts</h3>
+  {% if not approved %}
+    <p>None yet.</p>
+  {% else %}
+    <ul>
+      {% for fact in approved %}
+        <li>{{ labels.get(fact.fact_type, fact.fact_type) }}: {{ fact.display_value }}
+          ({{ fact.fact_id }}, {{ fact.actor_id or "staff" }} at {{ fact.acted_at }})</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h3>Supplied quotations</h3>
+  <p class="muted">Quoted source language stays attributed. It is not an approved finding.</p>
+  {% if not quotes %}
+    <p>None.</p>
+  {% else %}
+    <ul>
+      {% for quote in quotes %}
+        <li>{{ quote.label }} · {{ quote.document_id }} {{ quote.locator }} · {{ quote.excerpt }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+
+{% if user.role == "intake_staff" %}
+<section class="card">
+  <h3>Reveal a masked value</h3>
+  <form method="post" action="/matters/{{ matter.matter_id }}/reveal">
+    <label for="reveal_fact">Fact ID</label>
+    <input id="reveal_fact" name="fact_id" type="text" required>
+    <label for="reveal_reason">Reason</label>
+    <input id="reveal_reason" name="reason" type="text" required>
+    <p><button class="secondary" type="submit">Reveal</button></p>
+  </form>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

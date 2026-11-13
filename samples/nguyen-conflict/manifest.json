@@ -1,0 +1,10 @@
+{
+  "key": "nguyen-conflict",
+  "title": "Nguyen parking-lot inquiry",
+  "files": [
+    {"name": "01-intake-form.txt", "type": "intake form", "channel": "walk-in"},
+    {"name": "02-witness-note.txt", "type": "incident description", "channel": "email"},
+    {"name": "03-insurer-email.txt", "type": "email", "channel": "email"},
+    {"name": "04-clinic-note.txt", "type": "medical note", "channel": "upload"}
+  ]
+}

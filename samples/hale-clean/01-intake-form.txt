@@ -1,0 +1,13 @@
+# Fictional sample. Not a real person or a real claim.
+
+Document date: March 6, 2026
+Client: Jordan Hale
+Contact: (555) 010-1001
+Incident date: March 4, 2026
+Incident time: 2:15 p.m.
+Incident location: Palm Avenue and 3rd Street, Boca Raton
+Parties: Jordan Hale; Avery Ortiz
+Injury: neck strain
+Insurer: Northline Mutual
+SSN: 900-12-3456
+Account: 991122334455

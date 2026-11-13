@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block body %}
+<p><a href="/matters/{{ matter_id }}">Back to the matter</a></p>
+<h2>Audit log · {{ matter_id }}</h2>
+<table>
+  <thead>
+    <tr><th>#</th><th>When</th><th>User</th><th>Role</th><th>Action</th><th>Object</th><th>Detail</th></tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.audit_id }}</td>
+      <td>{{ row.at }}</td>
+      <td>{{ row.user_id }}</td>
+      <td>{{ row.role }}</td>
+      <td>{{ row.action }}</td>
+      <td>{{ row.object_id or "" }}</td>
+      <td>{{ row.detail }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h2>Sign in</h2>
+  <p>Use a seeded demo account. The shared password is <code>intake-demo</code>.</p>
+  <ul>
+    <li><code>casey.lin</code> — intake staff</li>
+    <li><code>morgan.ellis</code> — office administrator</li>
+    <li><code>riley.brooks</code> — attorney reviewer</li>
+    <li><code>sam.patel</code> — intake staff with no sample matters</li>
+  </ul>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form method="post" action="/login">
+    <label for="user_id">User</label>
+    <input id="user_id" name="user_id" type="text" autocomplete="username" required>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    <p><button type="submit">Sign in</button></p>
+  </form>
+</section>
+{% endblock %}

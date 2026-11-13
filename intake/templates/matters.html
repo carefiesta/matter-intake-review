@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h2>Matters you can open</h2>
+  {% if not matters %}
+    <p>No matters yet. Load the three fictional bundles, or register your own.</p>
+  {% else %}
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Title</th><th>Status</th><th>Stage</th></tr>
+      </thead>
+      <tbody>
+        {% for matter in matters %}
+        <tr>
+          <td><a href="/matters/{{ matter.matter_id }}">{{ matter.matter_id }}</a></td>
+          <td><a href="/matters/{{ matter.matter_id }}">{{ matter.title }}</a></td>
+          <td><span class="status">{{ matter.status }}</span></td>
+          <td>{{ matter.processing_stage or "" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+  {% if user.role == "intake_staff" %}
+    <form method="post" action="/matters/load-samples">
+      <button type="submit">Load sample bundles</button>
+    </form>
+  {% endif %}
+</section>
+
+{% if user.role == "intake_staff" %}
+<section class="card">
+  <h2>Register a bundle</h2>
+  <p>Two to four files. Plain text (.txt or .md) is read. Other types are stored and left unprocessed.</p>
+  <form method="post" action="/matters" enctype="multipart/form-data">
+    <label for="title">Matter title</label>
+    <input id="title" name="title" type="text" required>
+    {% for n in [1, 2, 3, 4] %}
+      <div class="row">
+        <div>
+          <label for="file{{ n }}">File {{ n }}</label>
+          <input id="file{{ n }}" name="file{{ n }}" type="file">
+        </div>
+        <div>
+          <label for="type{{ n }}">Type</label>
+          <select id="type{{ n }}" name="type{{ n }}">
+            <option value="">Infer from the filename</option>
+            {% for item in document_types %}
+              <option>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="channel{{ n }}">Channel</label>
+          <select id="channel{{ n }}" name="channel{{ n }}">
+            {% for item in channels %}
+              <option {% if item == "upload" %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    {% endfor %}
+    <p><button type="submit">Register and extract</button></p>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

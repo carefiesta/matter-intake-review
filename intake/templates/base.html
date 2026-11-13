@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "Matter intake review" }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1><a href="/matters">Matter intake review</a></h1>
+      <p>Source-linked intake for one prospective matter. No legal advice.</p>
+    </div>
+    <nav>
+      {% if user %}
+        <span>{{ user.display_name }} ({{ user.role }})</span>
+        <form method="post" action="/logout" style="display:inline">
+          <button class="secondary" type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a href="/login">Sign in</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main>
+    {% if message %}
+      <p class="banner">{{ message }}</p>
+    {% endif %}
+    {% block body %}{% endblock %}
+  </main>
+  <footer>
+    <p class="notice">Candidate extractions are not verified evidence until staff approval. This pipeline does not provide legal advice. Attorneys retain professional judgment.</p>
+  </footer>
+</body>
+</html>
