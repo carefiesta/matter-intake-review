@@ -1,0 +1,10 @@
+{
+  "key": "ortiz-exceptions",
+  "title": "Ortiz bicycle inquiry",
+  "files": [
+    {"name": "01-intake-form.txt", "type": "intake form", "channel": "phone"},
+    {"name": "02-unreadable.txt", "type": "Other", "channel": "upload"},
+    {"name": "03-wrong-matter.txt", "type": "email", "channel": "email"},
+    {"name": "04-scene.pdf", "type": "Other", "channel": "upload"}
+  ]
+}

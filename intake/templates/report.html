@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block body %}
+<p><a href="/matters/{{ matter_id }}">Back to the matter</a></p>
+<h2>Intake report · {{ report.title }}</h2>
+<p class="muted">{{ report.audience }} view · {{ report.word_count }} words · template {{ report.template_version }}</p>
+<pre class="report">{{ report.text }}</pre>
+{% endblock %}
